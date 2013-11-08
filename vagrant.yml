@@ -1,0 +1,34 @@
+---
+#
+
+- name: common utilities
+  hosts: all
+  user: vagrant
+  sudo : yes
+
+  roles:
+    - common
+
+- name: install opensrf
+  hosts: opensrf
+  user: vagrant
+  sudo: yes
+
+  roles:
+    - opensrf
+
+- name: install evergreen
+  hosts: evergreen
+  user: vagrant
+  sudo: yes
+
+  roles:
+    - evergreen
+
+# - name: install sipserver
+#   hosts: sipserver
+#   user: vagrant
+#   sudo: yes
+
+#   roles:
+#     - sipserver

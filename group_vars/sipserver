@@ -1,0 +1,5 @@
+---
+# file: group_vars/sipserver
+
+enabled: false
+

@@ -1,0 +1,23 @@
+set daemon 120
+set logfile /var/log/monit.log
+set idfile /var/lib/monit/id
+set statefile /var/lib/monit/state
+{% if send_alerts %}
+set mailserver localhost
+set mail-format { from: monit@{{ ansible_hostname }} }
+set alert {{ alert_email }}
+{% endif %}
+set eventqueue
+  basedir /var/lib/monit/events
+  slots 100
+set httpd port 2812 and
+  allow 0.0.0.0/0.0.0.0
+  allow {{ monit_user }}:{{ monit_pass }}
+check system {{ ansible_hostname }}
+  if loadavg (1min) > {{ load_avg1 }} then alert
+  if loadavg (5min) > {{ load_avg5 }} then alert
+  if memory usage > {{ load_memory }} then alert
+  if swap usage > {{ load_swap }} then alert
+check filesystem root with path /
+  if space usage > {{ disk_usage }} for 5 cycles then alert
+include /etc/monit/conf.d/*

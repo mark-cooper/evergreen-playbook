@@ -1,0 +1,20 @@
+---
+# file: group_vars/all
+
+# common
+firewall:
+  - 22
+  - 80
+  - 443
+send_alerts: false
+monit_user: admin
+monit_pass: monit123456
+alert_email: abc@123.com
+load_avg1: 8
+load_avg5: 4
+load_memory: 90%
+load_swap: 45%
+disk_usage: 80%
+
+# opensrf & evergreen
+osname: ubuntu-precise
