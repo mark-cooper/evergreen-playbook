@@ -8,9 +8,9 @@ QuickStart
 
 Install VirtualBox, Vagrant, Ansible and clone the Evergreen Playbook. From the Playbook directory:
 
-  $ vagrant up --no-provision
-  $ # ssh into the machine and run 'cpan' for root (use sudo for modules)
-  $ vagrant provision
+	$ vagrant up --no-provision
+	$ # ssh into the machine and run 'cpan' for root (use sudo for modules)
+	$ vagrant provision
 
 After the provisioning process has completed you should have a working Evergreen install (on a VM using 4GB ram).
 
@@ -20,8 +20,8 @@ After the provisioning process has completed you should have a working Evergreen
 
 However, to get rid of those port numbers, quick and dirty for OSX:
 
-  $ sudo ipfw add 100 fwd 127.0.0.1,3001 tcp from any to me 80
-  $ sudo ipfw add 101 fwd 127.0.0.1,4443 tcp from any to me 443
+	$ sudo ipfw add 100 fwd 127.0.0.1,3001 tcp from any to me 80
+	$ sudo ipfw add 101 fwd 127.0.0.1,4443 tcp from any to me 443
 
 You should now be able to use http://localhost and https://localhost.
 
