@@ -45,6 +45,8 @@
 - name: apply exim4 configuration
   sudo: yes
   template: src=update-exim4.conf.conf.j2 dest=/etc/exim4/update-exim4.conf.conf
+  notify:
+    - restart exim4
   tags: exim
 
 - name: start exim4 with configuration
@@ -55,6 +57,8 @@
 - name: apply monit configuration
   sudo: yes
   template: src=monitrc.j2 dest=/etc/monit/monitrc
+  notify:
+    - restart monit
   tags: monit
 
 - name: start monit with configuration
