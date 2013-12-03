@@ -1,7 +1,0 @@
----
-
-- name: restart exim4
-  service: name=exim4 state=restarted
-
-- name: restart monit
-  service: name=monit state=restarted

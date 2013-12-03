@@ -8,6 +8,8 @@ QuickStart
 
 Install VirtualBox, Vagrant, Ansible and clone the Evergreen Playbook. From the Playbook directory:
 
+	$ # download the ansible-roles repository from github (provides "common" role)
+	$ export ANSIBLE_ROLES_PATH=/path/to/ansible-roles
 	$ vagrant up --no-provision
 	$ # ssh into the machine and run 'cpan' for root (use sudo for modules)
 	$ vagrant provision
