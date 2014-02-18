@@ -1,14 +1,6 @@
 ---
 #
 
-- name: common utilities
-  hosts: all
-  user: vagrant
-  sudo : yes
-
-  roles:
-    - common
-
 - name: install opensrf
   hosts: opensrf
   user: vagrant
