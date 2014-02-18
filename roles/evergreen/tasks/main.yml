@@ -1,0 +1,186 @@
+---
+# INSTALL EVERGREEN
+# CURRENTLY DEPENDS ON OPENSRF ROLE
+
+- name: install required packages
+  sudo: yes
+  apt: pkg={{ item }} state=installed
+  with_items:
+    - nsis
+    - python-psycopg2
+  tags: evergreen
+
+- name: download the evergreen repository
+  sudo_user: opensrf
+  git: repo=git://git.evergreen-ils.org/Evergreen.git dest=/home/opensrf/Evergreen version={{ evergreen_version }}
+  tags: evergreen
+
+- name: install the evergreen pre-reqs
+  sudo: yes
+  shell: export PERL_MM_USE_DEFAULT=1 && make -f Open-ILS/src/extras/Makefile.install {{ evergreen_os_name }} chdir=/home/opensrf/Evergreen
+  tags: evergreen
+
+- name: install the postgres pre-reqs
+  sudo: yes
+  command: make -f Open-ILS/src/extras/Makefile.install postgres-server-{{ evergreen_os_name }} chdir=/home/opensrf/Evergreen
+  tags: evergreen
+
+- name: generate the configure script and makefiles
+  sudo_user: opensrf
+  command: autoreconf -i chdir=/home/opensrf/Evergreen
+  tags: evergreen
+
+- name: configure and build evergreen
+  sudo_user: opensrf
+  shell: export PATH=/openils/bin:$PATH && ./configure --prefix=/openils --sysconfdir=/openils/conf && make chdir=/home/opensrf/Evergreen
+  tags: evergreen
+
+- name: install evergreen
+  sudo: yes
+  shell: make STAFF_CLIENT_STAMP_ID={{ evergreen_version }} install chdir=/home/opensrf/Evergreen
+  tags: evergreen
+
+- name: change ownership of root openils directory to opensrf
+  sudo: yes
+  file: path=/openils owner=opensrf group=opensrf state=directory recurse=yes
+  tags: opensrf
+
+- name: apply opensrf_core configuration settings
+  sudo_user: opensrf
+  template: src=opensrf_core.xml.j2 dest=/openils/conf/opensrf_core.xml
+  tags: evergreen
+
+- name: copy opensrf.xml in place
+  sudo_user: opensrf
+  command: cp -b /openils/conf/opensrf.xml.example /openils/conf/opensrf.xml
+  tags: evergreen
+
+- name: symlink the staff client version
+  sudo_user: opensrf
+  file: src=/openils/var/web/xul/{{ evergreen_version }}/server dest=/openils/var/web/xul/server state=link
+  tags: evergreen
+
+- name: download the dojo toolkit
+  sudo_user: opensrf
+  get_url: url=http://download.dojotoolkit.org/release-{{ evergreen_dojo_version }}/dojo-release-{{ evergreen_dojo_version }}.tar.gz dest=/home/opensrf mode=0640
+  tags: evergreen
+
+- name: untar dojo in the openils directory
+  sudo_user: opensrf
+  command: tar -C /openils/var/web/js -xzf dojo-release-{{ evergreen_dojo_version }}.tar.gz chdir=/home/opensrf
+  tags: evergreen
+
+- name: copy dojo files to the correct location
+  sudo_user: opensrf
+  shell: cp -r /openils/var/web/js/dojo-release-{{ evergreen_dojo_version }}/* /openils/var/web/js/dojo/.
+  tags: evergreen
+
+- name: copy evergreen apache files to the correct location
+  sudo: yes
+  command: cp {{ item.from }} {{ item.to }}
+  with_items: evergreen_apache_files
+  tags: evergreen
+
+- name: create the ssl directory
+  sudo: yes
+  file: path=/etc/apache2/ssl owner=root group=root mode=0755 state=directory
+  tags: evergreen
+
+- name: create the self-signed ssl cert 
+  sudo: yes
+  command: openssl req -new -nodes -x509 -subj "/C=US/ST=California/L=Petaluma/O=IT/CN={{ ansible_hostname }}" -days 365 -keyout /etc/apache2/ssl/server.key -out /etc/apache2/ssl/server.crt creates=/etc/apache2/ssl/server.crt
+  tags: evergreen
+
+- name: change the apache run user
+  sudo: yes
+  lineinfile: dest=/etc/apache2/envvars regexp="export APACHE_RUN_USER=www-data" line="export APACHE_RUN_USER=opensrf"
+  tags: evergreen
+
+- name: disable apache default site and enable eg.conf
+  sudo: yes
+  shell: a2dissite default && a2ensite eg.conf
+  ignore_errors: true
+  tags: evergreen
+
+- name: remove apache lock if present
+  sudo: yes
+  file: path=/var/lock/apache2 state=absent
+  tags: evergreen
+
+# STAFF CLIENT
+- name: download xulrunners
+  sudo_user: opensrf
+  get_url: url={{ item }} dest=/home/opensrf/Evergreen/Open-ILS/xul/staff_client
+  with_items: evergreen_xul_versions
+  when: evergreen_make_staff_client
+  tags: staff_client
+
+- name: make rigrelease for staff client
+  sudo_user: opensrf
+  command: make rigrelease chdir=/home/opensrf/Evergreen/Open-ILS/xul/staff_client
+  when: evergreen_make_staff_client
+  tags: staff_client
+
+- name: rebuild staff client
+  sudo: yes
+  command: make rebuild chdir=/home/opensrf/Evergreen/Open-ILS/xul/staff_client
+  when: evergreen_make_staff_client
+  tags: staff_client
+
+- name: make updates-client
+  sudo: yes
+  command: make updates-client chdir=/home/opensrf/Evergreen/Open-ILS/xul/staff_client
+  when: evergreen_make_staff_client
+  tags: staff_client
+
+# DATABASE CREATION
+# CAN BE MOVED INTO SEPARATE PLAY (NO CONDITIONALS)
+- name: conditionally drop the evergreen database
+  sudo_user: postgres
+  postgresql_db: name={{ evergreen_db_name }} state=absent
+  when: evergreen_drop_database
+  tags: evergreen
+
+- name: create evergreen database user
+  sudo_user: postgres
+  postgresql_user: name={{ evergreen_db_user }} password={{ evergreen_db_password }} role_attr_flags=SUPERUSER
+  when: evergreen_create_database
+  tags: evergreen
+
+- name: create the evergreen database
+  sudo: yes
+  command: perl Open-ILS/src/support-scripts/eg_db_config 
+    --update-config 
+    --service all 
+    --create-database 
+    --create-schema 
+    --create-offline 
+    --user {{ evergreen_db_user }}
+    --password {{ evergreen_db_password }}
+    --hostname {{ evergreen_db_host }}
+    --port {{ evergreen_db_port }}
+    --database {{ evergreen_db_name }}
+    --admin-user {{ evergreen_admin_user }}
+    --admin-pass {{ evergreen_admin_password }}
+    --load-all-sample
+    chdir=/home/opensrf/Evergreen
+  ignore_errors: true
+  when: evergreen_create_database
+  tags: evergreen
+
+# KICKSTART EVERYTHING
+# EVENTUALLY MOVE INTO SEPARATE PLAY
+- name: restart opensrf
+  sudo_user: opensrf
+  shell: export PATH=/openils/bin:$PATH && osrf_control --localhost --kill-with-fire && osrf_control --localhost --start-all
+  tags: evergreen
+
+- name: run autogen
+  sudo_user: opensrf 
+  shell: export PATH=/openils/bin:$PATH && autogen.sh -u 
+  tags: evergreen
+
+- name: restart apache
+  sudo: yes
+  action: service name=apache2 state=restarted
+  tags: evergreen
