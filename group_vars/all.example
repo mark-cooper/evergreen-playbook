@@ -1,0 +1,69 @@
+---
+# file: group_vars/all
+
+opensrf_os_name: ubuntu-precise
+opensrf_version: master
+opensrf_ejabberd_password: 123456
+
+opensrf_hosts:
+  -
+    ip: 127.0.1.1
+    hostname: localhost
+    alias: localhost.localdomain
+  -
+    ip: 127.0.1.1
+    hostname: evergreen
+    alias: evergreen.localdomain
+  -
+    ip: 127.0.0.2
+    hostname: public.localhost
+    alias: public
+  -
+    ip: 127.0.0.3
+    hostname: private.localhost
+    alias: private
+
+opensrf_jabber_users:
+  -
+    type: opensrf
+    host: private.localhost
+  - 
+    type: opensrf
+    host: public.localhost
+  - 
+    type: router
+    host: private.localhost
+  - 
+    type: router
+    host: public.localhost
+
+evergreen_os_name: ubuntu-precise
+evergreen_version: master
+evergreen_dojo_version: 1.3.3
+evergreen_db_user: evergreen
+evergreen_db_password: evergreen
+evergreen_db_host: localhost
+evergreen_db_port: 5432
+evergreen_db_name: evergreen
+evergreen_admin_user: openils
+evergreen_admin_password: 123456
+evergreen_drop_database: true
+evergreen_create_database: true
+evergreen_make_staff_client: true
+
+evergreen_apache_files:
+  - 
+    from: /home/opensrf/Evergreen/Open-ILS/examples/apache/eg.conf
+    to: /etc/apache2/sites-available/eg.conf
+  - 
+    from: /home/opensrf/Evergreen/Open-ILS/examples/apache/eg_vhost.conf
+    to: /etc/apache2
+  - 
+    from: /home/opensrf/Evergreen/Open-ILS/examples/apache/eg_startup
+    to: /etc/apache2
+
+# have trouble downloading these via ftp:// on some machines so do it proactively
+evergreen_xul_versions:
+  - http://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/14.0.1/runtimes/xulrunner-14.0.1.en-US.win32.zip
+  - http://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/14.0.1/runtimes/xulrunner-14.0.1.en-US.linux-i686.tar.bz2
+  - http://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/14.0.1/runtimes/xulrunner-14.0.1.en-US.linux-x86_64.tar.bz2
