@@ -8,6 +8,9 @@ Vagrant.configure("2") do |config|
 
   config.vm.provider "virtualbox" do |v|
     v.customize ["modifyvm", :id, "--memory", 4096]
+    if not RUBY_PLATFORM.downcase.include?("mswin")
+      v.customize ["modifyvm", :id, "--cpus", `grep "^processor" /proc/cpuinfo | wc -l`.chomp]
+    end
   end
 
   config.vm.network :private_network, ip: "10.11.12.16"
